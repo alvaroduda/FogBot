@@ -18,7 +18,7 @@ async function setupServer(guild) {
                 try {
                     role = await guild.roles.create({
                         name: roleName,
-                        color: key === 'admin' ? '#FF0000' : key === 'atendente' ? '#00FF00' : key === 'cliente' ? '#0000FF' : '#99AAB5',
+                        color: key === 'admin' ? '#FF0000' : key === 'atendente' ? '#00FF00' : key === 'cliente' ? '#0000FF' : key === 'ticket' ? '#FFA500' : key === 'creator' ? '#9B59B6' : '#99AAB5',
                         permissions: key === 'admin' ? [PermissionFlagsBits.Administrator] : [],
                         reason: 'Setup inicial do FogBot'
                     });
@@ -148,6 +148,44 @@ async function setupServer(guild) {
                                 await channel.send({ embeds: [embed], components: [row] });
                             }
                         }
+                    },
+                    { 
+                        name: config.channels.requestCreator, 
+                        type: ChannelType.GuildText,
+                        setup: async (channel, roles) => {
+                            // Enviar embed de solicitação Creator
+                            const messages = await channel.messages.fetch({ limit: 10 });
+                            if (messages.size === 0) {
+                                const embed = new EmbedBuilder()
+                                    .setTitle('🎬 Seja um Creator do Fog Client!')
+                                    .setDescription(
+                                        '**Quer divulgar o Fog Client e ganhar 50% de desconto?**\n\n' +
+                                        '📋 **Requisitos:**\n' +
+                                        '• Mínimo de **100 seguidores** no TikTok **OU**\n' +
+                                        '• Mínimo de **100 inscritos** no YouTube\n\n' +
+                                        '🎁 **Benefícios:**\n' +
+                                        '• Cargo exclusivo **Creator**\n' +
+                                        '• **50% de desconto** na compra do Fog Client\n' +
+                                        '• Suporte prioritário\n\n' +
+                                        '📹 **Compromisso:**\n' +
+                                        '• Gravar **3 vídeos** mostrando o Fog Client\n' +
+                                        '• Divulgar a loja em cada vídeo\n\n' +
+                                        'Clique no botão abaixo para solicitar sua tag Creator!'
+                                    )
+                                    .setColor('#9B59B6')
+                                    .setFooter({ text: 'Fog Client • Programa Creator' });
+
+                                const row = new ActionRowBuilder()
+                                    .addComponents(
+                                        new ButtonBuilder()
+                                            .setCustomId('request_creator')
+                                            .setLabel('🎬 Solicitar Tag Creator')
+                                            .setStyle(ButtonStyle.Primary)
+                                    );
+
+                                await channel.send({ embeds: [embed], components: [row] });
+                            }
+                        }
                     }
                 ]
             },
@@ -158,7 +196,36 @@ async function setupServer(guild) {
             {
                 name: config.categories.support,
                 channels: [
-                    { name: config.channels.salesLogs, type: ChannelType.GuildText }
+                    { 
+                        name: config.channels.salesLogs, 
+                        type: ChannelType.GuildText,
+                        setup: async (channel, roles) => {
+                            // Configurar permissões específicas do canal logs-vendas
+                            // Membros e Clientes não podem ver este canal
+                            await channel.permissionOverwrites.set([
+                                {
+                                    id: channel.guild.roles.everyone.id,
+                                    deny: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages]
+                                },
+                                {
+                                    id: roles.membro.id,
+                                    deny: [PermissionFlagsBits.ViewChannel]
+                                },
+                                {
+                                    id: roles.cliente.id,
+                                    deny: [PermissionFlagsBits.ViewChannel]
+                                },
+                                {
+                                    id: roles.admin.id,
+                                    allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory]
+                                },
+                                {
+                                    id: roles.atendente.id,
+                                    allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory]
+                                }
+                            ]);
+                        }
+                    }
                 ]
             }
         ];
@@ -197,7 +264,7 @@ async function setupServer(guild) {
             ]);
 
             // Se for categoria de tickets, negar visualização para everyone
-            if (catConfig.name === config.categories.tickets || catConfig.name === config.categories.suporte) {
+            if (catConfig.name === config.categories.tickets || catConfig.name === config.categories.support) {
                 await category.permissionOverwrites.edit(guild.roles.everyone, { ViewChannel: false });
                 await category.permissionOverwrites.edit(roles.membro, { ViewChannel: false });
                 await category.permissionOverwrites.edit(roles.cliente, { ViewChannel: false });
@@ -218,14 +285,14 @@ async function setupServer(guild) {
                     });
                 }
 
-                // Sincronizar permissões com a categoria
-                console.log(`Sincronizando permissões do canal ${chConfig.name}...`);
-                await channel.lockPermissions();
-
-                // Setup específico do canal (ex: enviar mensagem de compra)
+                // Setup específico do canal (ex: enviar mensagem de compra ou permissões especiais)
                 if (chConfig.setup) {
                     console.log(`Executando setup específico para ${chConfig.name}...`);
-                    await chConfig.setup(channel);
+                    await chConfig.setup(channel, roles);
+                } else {
+                    // Sincronizar permissões com a categoria apenas se não houver setup específico
+                    console.log(`Sincronizando permissões do canal ${chConfig.name}...`);
+                    await channel.lockPermissions();
                 }
             }
         }

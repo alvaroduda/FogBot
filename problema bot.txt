@@ -1,0 +1,4 @@
+O bot após o envio do comprovante bloqueia o chat, mas o chat deve ser desbloqueado manualmente depois por um administrador ou atendente
+
+Alem disso quando eu respondi a mensagem com uma foto o bot acionou novamente a mensagem de que recebeu o comprovante, mas isso so deve acontecer uma voz por ticket, na primeira mensagem
+

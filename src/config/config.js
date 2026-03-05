@@ -15,7 +15,9 @@ module.exports = {
     admin: 'Administrador',
     atendente: 'Atendente',
     cliente: 'Cliente',
-    membro: 'Membro'
+    membro: 'Membro',
+    ticket: 'Ticket',
+    creator: 'Creator'
   },
   categories: {
     info: '📌 INFORMAÇÕES',
@@ -29,6 +31,7 @@ module.exports = {
     announcements: 'anuncios',
     buyNow: 'compre-agora',
     salesLogs: 'logs-vendas',
-    chat: 'chat'
+    chat: 'chat',
+    requestCreator: 'solicitar-creator'
   }
 };
